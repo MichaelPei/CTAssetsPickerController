@@ -37,12 +37,11 @@
 #import "UICollectionView+CTAssetsPickerController.h"
 #import "NSIndexSet+CTAssetsPickerController.h"
 #import "NSBundle+CTAssetsPickerController.h"
-
-
+#import "RKNotificationHub.h"
 
 
 NSString * const CTAssetsGridViewCellIdentifier = @"CTAssetsGridViewCellIdentifier";
-NSString * const CTAssetsGridViewFooterIdentifier = @"CTAssetsGridViewFooterIdentifier";
+//NSString * const CTAssetsGridViewFooterIdentifier = @"CTAssetsGridViewFooterIdentifier";
 
 
 @interface CTAssetsGridViewController ()
@@ -59,6 +58,13 @@ NSString * const CTAssetsGridViewFooterIdentifier = @"CTAssetsGridViewFooterIden
 @property (nonatomic, strong) CTAssetsPickerNoAssetsView *noAssetsView;
 
 @property (nonatomic, assign) BOOL didLayoutSubviews;
+@property (nonatomic, strong) UIToolbar *toolbar;
+
+@property (nonatomic, strong) UIBarButtonItem *doneBarButtonItem;
+@property (nonatomic, strong) UIBarButtonItem *previewBarButtonItem;
+@property (nonatomic, strong) UIBarButtonItem *badgeBarButtonItem;
+
+@property (nonatomic, strong) RKNotificationHub *notificationHub;
 
 @end
 
@@ -82,10 +88,12 @@ NSString * const CTAssetsGridViewFooterIdentifier = @"CTAssetsGridViewFooterIden
         [self.collectionView registerClass:CTAssetsGridViewCell.class
                 forCellWithReuseIdentifier:CTAssetsGridViewCellIdentifier];
         
-        [self.collectionView registerClass:CTAssetsGridViewFooter.class
-                forSupplementaryViewOfKind:UICollectionElementKindSectionFooter
-                       withReuseIdentifier:CTAssetsGridViewFooterIdentifier];
-        
+//        [self.collectionView registerClass:CTAssetsGridViewFooter.class
+//                forSupplementaryViewOfKind:UICollectionElementKindSectionFooter
+//                       withReuseIdentifier:CTAssetsGridViewFooterIdentifier];
+        [self.view addSubview:self.toolbar];
+
+
         [self addNotificationObserver];
     }
     
@@ -158,21 +166,43 @@ NSString * const CTAssetsGridViewFooterIdentifier = @"CTAssetsGridViewFooterIden
     return (self.fetchResult.count > 0) ? self.fetchResult[indexPath.item] : nil;
 }
 
+- (NSIndexPath *)indexPathForAsset:(PHAsset *)asset {
+    if (self.fetchResult.count == 0) {
+        return nil;
+    }
+
+    NSUInteger index = [self.fetchResult indexOfObject:asset];
+    if (index == NSNotFound) {
+        return nil;
+    }
+
+    return [NSIndexPath indexPathForItem:index inSection:0];
+}
+
 
 #pragma mark - Setup
 
 - (void)setupViews
 {
     self.collectionView.backgroundColor = [UIColor whiteColor];
+
+    UIEdgeInsets contentInsets = self.collectionView.contentInset;
+    contentInsets.bottom = 44.0;
+    self.collectionView.contentInset = contentInsets;
 }
 
 - (void)setupButtons
 {
     self.navigationItem.rightBarButtonItem =
-    [[UIBarButtonItem alloc] initWithTitle:CTAssetsPickerLocalizedString(@"Done", nil)
-                                     style:UIBarButtonItemStyleDone
+    [[UIBarButtonItem alloc] initWithTitle:CTAssetsPickerLocalizedString(@"Cancel", nil)
+                                     style:UIBarButtonItemStylePlain
                                     target:self.picker
-                                    action:@selector(finishPickingAssets:)];
+                                    action:@selector(dismiss:)];
+//    [[UIBarButtonItem alloc] initWithTitle:CTAssetsPickerLocalizedString(@"Done", nil)
+//                                     style:UIBarButtonItemStyleDone
+//                                    target:self.picker
+//                                    action:@selector(finishPickingAssets:)];
+    
 }
 
 - (void)setupAssets
@@ -343,24 +373,43 @@ NSString * const CTAssetsGridViewFooterIdentifier = @"CTAssetsGridViewFooterIden
 - (void)assetsPickerSelectedAssetsDidChange:(NSNotification *)notification
 {
     NSArray *selectedAssets = (NSArray *)notification.object;
-    [self updateTitle:selectedAssets];
+//    [self updateTitle:selectedAssets];
     [self updateButton:selectedAssets];
 }
 
 - (void)updateTitle:(NSArray *)selectedAssets
 {
-    if (selectedAssets.count > 0)
-        self.title = self.picker.selectedAssetsString;
-    else
         self.title = self.assetCollection.localizedTitle;
+//    if (selectedAssets.count > 0)
+//        self.title = self.picker.selectedAssetsString;
+//    else
+//        self.title = self.assetCollection.localizedTitle;
 }
 
 - (void)updateButton:(NSArray *)selectedAssets
 {
-    if (self.picker.alwaysEnableDoneButton)
-        self.navigationItem.rightBarButtonItem.enabled = YES;
-    else
-        self.navigationItem.rightBarButtonItem.enabled = (self.picker.selectedAssets.count > 0);
+//    if (self.picker.alwaysEnableDoneButton)
+//        self.navigationItem.rightBarButtonItem.enabled = YES;
+//    else
+//        self.navigationItem.rightBarButtonItem.enabled = (self.picker.selectedAssets.count > 0);
+    BOOL hasItemSelected = (self.picker.selectedAssets.count > 0);
+    self.previewBarButtonItem.enabled = hasItemSelected;
+
+    if (self.picker.selectedAssets.count > self.notificationHub.count) {
+        [self.notificationHub incrementBy:(self.picker.selectedAssets.count - self.notificationHub.count)];
+        [self.notificationHub pop];
+    }
+    else if (self.picker.selectedAssets.count < self.notificationHub.count) {
+        [self.notificationHub decrementBy:(self.notificationHub.count - self.picker.selectedAssets.count)];
+        [self.notificationHub pop];
+    }
+
+    if (self.picker.alwaysEnableDoneButton) {
+        self.doneBarButtonItem.enabled = YES;
+    }
+    else {
+        self.doneBarButtonItem.enabled = hasItemSelected;
+    }
 }
 
 
@@ -405,6 +454,13 @@ NSString * const CTAssetsGridViewFooterIdentifier = @"CTAssetsGridViewFooterIden
         
         [self.navigationController pushViewController:vc animated:YES];
     }
+}
+
+- (void)pushPageViewController {
+    CTAssetsPageViewController *vc = [[CTAssetsPageViewController alloc] initWithAssets:self.picker.selectedAssets];
+    vc.pageIndex = 0;//self.picker.selectedAssets.count - 1;
+
+    [self.navigationController pushViewController:vc animated:YES];
 }
 
 
@@ -631,19 +687,19 @@ NSString * const CTAssetsGridViewFooterIdentifier = @"CTAssetsGridViewFooterIden
                               }];
 }
 
-- (UICollectionReusableView *)collectionView:(UICollectionView *)collectionView viewForSupplementaryElementOfKind:(NSString *)kind atIndexPath:(NSIndexPath *)indexPath
-{
-    CTAssetsGridViewFooter *footer =
-    [collectionView dequeueReusableSupplementaryViewOfKind:UICollectionElementKindSectionFooter
-                                       withReuseIdentifier:CTAssetsGridViewFooterIdentifier
-                                              forIndexPath:indexPath];
-    
-    [footer bind:self.fetchResult];
-    
-    self.footer = footer;
-    
-    return footer;
-}
+//- (UICollectionReusableView *)collectionView:(UICollectionView *)collectionView viewForSupplementaryElementOfKind:(NSString *)kind atIndexPath:(NSIndexPath *)indexPath
+//{
+//    CTAssetsGridViewFooter *footer =
+//    [collectionView dequeueReusableSupplementaryViewOfKind:UICollectionElementKindSectionFooter
+//                                       withReuseIdentifier:CTAssetsGridViewFooterIdentifier
+//                                              forIndexPath:indexPath];
+//
+//    [footer bind:self.fetchResult];
+//
+//    self.footer = footer;
+//
+//    return footer;
+//}
 
 
 #pragma mark - Collection view delegate
@@ -716,6 +772,43 @@ NSString * const CTAssetsGridViewFooterIdentifier = @"CTAssetsGridViewFooterIden
     
     if ([self.picker.delegate respondsToSelector:@selector(assetsPickerController:didUnhighlightAsset:)])
         [self.picker.delegate assetsPickerController:self.picker didUnhighlightAsset:asset];
+}
+
+#pragma mark - Getter
+- (UIToolbar *)toolbar {
+    if (!_toolbar) {
+        _toolbar = [[UIToolbar alloc] initWithFrame:CGRectMake(0, self.view.bounds.size.height-44, self.view.bounds.size.width, 44)];
+        _toolbar.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleTopMargin;
+
+        UIBarButtonItem *previewBarButtonItem = [[UIBarButtonItem alloc] initWithTitle:@"预览" style:UIBarButtonItemStylePlain target:self action:@selector(pushPageViewController)];
+        previewBarButtonItem.tintColor = [UIColor blackColor];
+
+        UIView *containerView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 30, 30)];
+        UIBarButtonItem *badgeBarButtonItem = [[UIBarButtonItem alloc] initWithCustomView:containerView];
+        RKNotificationHub *notificationHub = [[RKNotificationHub alloc] initWithBarButtonItem:badgeBarButtonItem];
+//        [notificationHub setCircleColor:[UIColor blueColor] labelColor:[UIColor whiteColor]];
+        UIColor *tintColor = [UIView appearance].tintColor;
+        if (tintColor == nil) {
+            tintColor = [UIColor colorWithRed:253/255.0f green:86/255.0f blue:50/255.0f alpha:1.0];
+        }
+        [notificationHub setCircleColor:tintColor labelColor:[UIColor whiteColor]];
+        [notificationHub setCircleAtFrame:CGRectMake(4.5, 4.5, 21, 21)];
+
+        UIBarButtonItem *flexibleLeftBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemFlexibleSpace target:self action:nil];
+        UIBarButtonItem *doneBarButtonItem =
+                [[UIBarButtonItem alloc] initWithTitle:CTAssetsPickerLocalizedString(@"Done", nil)
+                                                                                  style:UIBarButtonItemStyleDone
+                                                                                 target:self.picker
+                                                                                 action:@selector(finishPickingAssets:)];
+
+        [_toolbar setItems:@[previewBarButtonItem,flexibleLeftBarButtonItem, badgeBarButtonItem, doneBarButtonItem] animated:YES];
+        self.doneBarButtonItem = doneBarButtonItem;
+        self.previewBarButtonItem = previewBarButtonItem;
+        self.badgeBarButtonItem = badgeBarButtonItem;
+        self.notificationHub = notificationHub;
+    }
+
+    return _toolbar;
 }
 
 @end

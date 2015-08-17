@@ -73,7 +73,7 @@
         self.sectionInset = UIEdgeInsetsMake(0, left, 0, right);
         self.itemSize = CGSizeMake(length, length);
         
-        self.footerReferenceSize = CGSizeMake(contentSize.width, floor(length * 2/3));
+//        self.footerReferenceSize = CGSizeMake(contentSize.width, floor(length * 2/3));
     }
     
     return self;

@@ -24,4 +24,5 @@ Pod::Spec.new do |spec|
   spec.ios.frameworks        = 'Photos'
   spec.requires_arc          = true
   spec.dependency            'PureLayout', '~> 2.0.0'
+  spec.dependency            'RKNotificationHub', '~> 2.0'
 end

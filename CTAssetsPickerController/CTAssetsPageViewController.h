@@ -41,6 +41,7 @@
  */
 @property (nonatomic, assign) NSInteger pageIndex;
 
+@property (nonatomic, strong, readonly) PHAsset *asset;
 
 /**
  *  @name Creating a Assets Page View Controller

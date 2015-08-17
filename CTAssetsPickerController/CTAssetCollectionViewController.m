@@ -327,13 +327,14 @@
 
 - (void)updateButton:(NSArray *)selectedAssets
 {
-    self.navigationItem.leftBarButtonItem = (self.picker.showsCancelButton) ? self.cancelButton : nil;
-    self.navigationItem.rightBarButtonItem = [self isTopViewController] ? self.doneButton : nil;
+    self.navigationItem.rightBarButtonItem = (self.picker.showsCancelButton) ? self.cancelButton : nil;
+//    self.navigationItem.leftBarButtonItem = (self.picker.showsCancelButton) ? self.cancelButton : nil;
+//    self.navigationItem.rightBarButtonItem = [self isTopViewController] ? self.doneButton : nil;
     
-    if (self.picker.alwaysEnableDoneButton)
-        self.navigationItem.rightBarButtonItem.enabled = YES;
-    else
-        self.navigationItem.rightBarButtonItem.enabled = (self.picker.selectedAssets.count > 0);
+//    if (self.picker.alwaysEnableDoneButton)
+//        self.navigationItem.rightBarButtonItem.enabled = YES;
+//    else
+//        self.navigationItem.rightBarButtonItem.enabled = (self.picker.selectedAssets.count > 0);
 }
 
 - (BOOL)isTopViewController

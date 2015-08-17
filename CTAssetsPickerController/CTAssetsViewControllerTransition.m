@@ -61,8 +61,9 @@
         CTAssetsGridViewController *fromVC  = (CTAssetsGridViewController *)[transitionContext viewControllerForKey:UITransitionContextFromViewControllerKey];
         CTAssetsPageViewController *toVC    = (CTAssetsPageViewController *)[transitionContext viewControllerForKey:UITransitionContextToViewControllerKey];
         CTAssetItemViewController *iVC      = (CTAssetItemViewController *)toVC.viewControllers[0];
-        NSIndexPath *indexPath              = [NSIndexPath indexPathForItem:toVC.pageIndex inSection:0];
-        
+//        NSIndexPath *indexPath              = [NSIndexPath indexPathForItem:toVC.pageIndex inSection:0];
+        NSIndexPath *indexPath              = [fromVC indexPathForAsset:toVC.asset];
+
         UIView *cellView        = [fromVC.collectionView cellForItemAtIndexPath:indexPath];
         UIImageView *imageView  = [[UIImageView alloc] initWithImage:iVC.image];
         UIView *snapshot        = [self resizedSnapshot:imageView];
@@ -132,8 +133,9 @@
         CTAssetsPageViewController *fromVC  = (CTAssetsPageViewController *)[transitionContext viewControllerForKey:UITransitionContextFromViewControllerKey];
         CTAssetsGridViewController *toVC    = (CTAssetsGridViewController *)[transitionContext viewControllerForKey:UITransitionContextToViewControllerKey];
         CTAssetItemViewController *iVC      = (CTAssetItemViewController *)fromVC.viewControllers[0];
-        NSIndexPath *indexPath              = [NSIndexPath indexPathForItem:fromVC.pageIndex inSection:0];
-        
+//        NSIndexPath *indexPath              = [NSIndexPath indexPathForItem:fromVC.pageIndex inSection:0];
+        NSIndexPath *indexPath              = [toVC indexPathForAsset:fromVC.asset];
+
         // Scroll to index path
         [toVC.collectionView scrollToItemAtIndexPath:indexPath atScrollPosition:UICollectionViewScrollPositionNone animated:NO];
         [toVC.collectionView layoutIfNeeded];

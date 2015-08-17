@@ -31,9 +31,8 @@
 #import "NSBundle+CTAssetsPickerController.h"
 #import "UIImage+CTAssetsPickerController.h"
 #import "PHAsset+CTAssetsPickerController.h"
-
-
-
+#import "RKNotificationHub.h"
+#import "CTAssetsPickerController.h"
 
 
 @interface CTAssetsPageViewController ()
@@ -41,12 +40,15 @@
 
 @property (nonatomic, assign, getter = isStatusBarHidden) BOOL statusBarHidden;
 
+@property (nonatomic, weak) CTAssetsPickerController *picker;
 @property (nonatomic, copy) NSArray *assets;
 //@property (nonatomic, strong) PHFetchResult *fetchResult;
-@property (nonatomic, strong, readonly) PHAsset *asset;
+//@property (nonatomic, strong, readonly) PHAsset *asset;
 
 @property (nonatomic, strong) UIBarButtonItem *playButton;
 @property (nonatomic, strong) UIBarButtonItem *pauseButton;
+
+@property (nonatomic, strong) UIToolbar *bottomToolbar;
 
 @end
 
@@ -78,6 +80,9 @@
         self.dataSource = self;
         self.delegate   = self;
         self.automaticallyAdjustsScrollViewInsets = NO;
+        self.view.backgroundColor = [UIColor blackColor];
+
+        [self.view addSubview:self.bottomToolbar];
     }
     
     return self;
@@ -90,6 +95,17 @@
     [self setupViews];
     [self addNotificationObserver];
 }
+//
+//- (void)viewWillAppear:(BOOL)animated {
+//    [super viewWillAppear:animated];
+//    [self.navigationController setNavigationBarHidden:YES animated:NO];
+//}
+//
+//- (void)viewWillDisappear:(BOOL)animated {
+//    [super viewWillDisappear:animated];
+//    [self.navigationController setNavigationBarHidden:NO animated:NO];
+//}
+
 
 - (void)dealloc
 {
@@ -101,7 +117,9 @@
     if (self.traitCollection.verticalSizeClass == UIUserInterfaceSizeClassCompact)
         return YES;
     else
+//        return YES;
         return self.isStatusBarHidden;
+
 }
 
 
@@ -110,7 +128,8 @@
 
 - (void)setupViews
 {
-    self.view.backgroundColor = [UIColor whiteColor];
+//    self.view.backgroundColor = [UIColor whiteColor];
+    self.view.backgroundColor = [UIColor blackColor];
 }
 
 - (void)setupButtons
@@ -308,10 +327,10 @@
 - (void)assetScrollViewDidTap:(NSNotification *)notification
 {
     UITapGestureRecognizer *gesture = (UITapGestureRecognizer *)notification.object;
-    
+
     if (gesture.numberOfTapsRequired == 1)
     {
-        [self toogleBackgroundColor:gesture];
+//        [self toogleBackgroundColor:gesture];
         [self toogleControls:gesture];
     }
 }
@@ -389,7 +408,10 @@
                      animations:^{
                          [self setNeedsStatusBarAppearanceUpdate];
                          [nav.navigationBar setAlpha:1.0f];
-                         
+
+                         self.bottomToolbar.transform = CGAffineTransformIdentity;
+                         self.bottomToolbar.alpha = 1.0f;
+
                          if ([self.asset ctassetsPickerIsVideo])
                              [nav.toolbar setAlpha:1.0f];
                      }];
@@ -406,6 +428,9 @@
                          [nav setToolbarHidden:YES animated:NO];
                          [nav.navigationBar setAlpha:0.0f];
                          [nav.toolbar setAlpha:0.0f];
+
+                         self.bottomToolbar.transform = CGAffineTransformMakeTranslation(0, 44);
+                         self.bottomToolbar.alpha = 0.0f;
                      }];
 }
 
@@ -422,5 +447,41 @@
     [((CTAssetItemViewController *)self.viewControllers[0]) pauseAsset:sender];
 }
 
+#pragma mark - Getters
+- (UIToolbar *)bottomToolbar {
+    if (!_bottomToolbar) {
+        _bottomToolbar = [[UIToolbar alloc] initWithFrame:CGRectMake(0, self.view.bounds.size.height-44, self.view.bounds.size.width, 44)];
+        _bottomToolbar.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleTopMargin;
+
+        UIView *containerView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 30, 30)];
+        UIBarButtonItem *badgeBarButtonItem = [[UIBarButtonItem alloc] initWithCustomView:containerView];
+        RKNotificationHub *notificationHub = [[RKNotificationHub alloc] initWithBarButtonItem:badgeBarButtonItem];
+//        [notificationHub setCircleColor:[UIColor blueColor] labelColor:[UIColor whiteColor]];
+        UIColor *tintColor = [UIView appearance].tintColor;
+        if (tintColor == nil) {
+            tintColor = [UIColor colorWithRed:253/255.0f green:86/255.0f blue:50/255.0f alpha:1.0];
+        }
+        [notificationHub setCircleColor:tintColor labelColor:[UIColor whiteColor]];
+        [notificationHub setCircleAtFrame:CGRectMake(4.5, 4.5, 21, 21)];
+        notificationHub.count = self.assets.count;
+
+        UIBarButtonItem *flexibleLeftBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemFlexibleSpace target:self action:nil];
+        UIBarButtonItem *doneBarButtonItem =
+                [[UIBarButtonItem alloc] initWithTitle:CTAssetsPickerLocalizedString(@"Done", nil)
+                                                 style:UIBarButtonItemStyleDone
+                                                target:self.picker
+                                                action:@selector(finishPickingAssets:)];
+
+        [_bottomToolbar setItems:@[flexibleLeftBarButtonItem, badgeBarButtonItem, doneBarButtonItem]];
+        [_bottomToolbar setBackgroundColor:[UIColor colorWithWhite:1 alpha:0.6]];
+    }
+
+    return _bottomToolbar;
+}
+
+- (CTAssetsPickerController *)picker
+{
+    return (CTAssetsPickerController *)self.splitViewController.parentViewController;
+}
 
 @end

@@ -341,7 +341,9 @@ NSString * const CTAssetsPickerDidDeselectAssetNotification = @"CTAssetsPickerDi
 {
     if (self.showsCancelButton)
     {
-        viewController.navigationItem.leftBarButtonItem =
+        // Change bar button item to right
+//        viewController.navigationItem.leftBarButtonItem =
+        viewController.navigationItem.rightBarButtonItem =
         [[UIBarButtonItem alloc] initWithTitle:CTAssetsPickerLocalizedString(@"Cancel", nil)
                                          style:UIBarButtonItemStylePlain
                                         target:self
@@ -382,15 +384,16 @@ NSString * const CTAssetsPickerDidDeselectAssetNotification = @"CTAssetsPickerDi
 
 - (void)toggleDoneButton
 {
-    UIViewController *vc = self.childSplitViewController.viewControllers.firstObject;
-    
-    if ([vc isMemberOfClass:[UINavigationController class]])
-    {
-        BOOL enabled = (self.alwaysEnableDoneButton) ? YES : (self.selectedAssets.count > 0);
-        
-        for (UIViewController *viewController in ((UINavigationController *)vc).viewControllers)
-            viewController.navigationItem.rightBarButtonItem.enabled = enabled;
-    }
+    // As the right bar button item changed to cancel, no need toggle here
+//    UIViewController *vc = self.childSplitViewController.viewControllers.firstObject;
+//
+//    if ([vc isMemberOfClass:[UINavigationController class]])
+//    {
+//        BOOL enabled = (self.alwaysEnableDoneButton) ? YES : (self.selectedAssets.count > 0);
+//
+//        for (UIViewController *viewController in ((UINavigationController *)vc).viewControllers)
+//            viewController.navigationItem.rightBarButtonItem.enabled = enabled;
+//    }
 }
 
 
